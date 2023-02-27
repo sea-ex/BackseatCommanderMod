@@ -12,6 +12,8 @@ namespace BackseatCommanderMod.Server
         private HttpServer httpServer;
         private bool disposedValue;
 
+        public CommanderService CommaderService { get; private set; }
+
         public CommanderServer(IPAddress host, int port, string publicFacingHost)
         {
             httpServer = new HttpServer(host, port);
@@ -55,6 +57,8 @@ namespace BackseatCommanderMod.Server
                         httpServer.OnGet -= OnServerGet;
                         httpServer.Stop();
                     }
+
+                    CommaderService = null;
                 }
 
                 httpServer = null;
@@ -70,10 +74,12 @@ namespace BackseatCommanderMod.Server
                 "/ws",
                 s =>
                 {
-                    s.OriginValidator = headerValue =>
-                        !string.IsNullOrEmpty(headerValue)
-                        && Uri.TryCreate(headerValue, UriKind.Absolute, out Uri origin)
-                        && origin.Host == publicFacingHost;
+                    //s.OriginValidator = headerValue =>
+                    //    !string.IsNullOrEmpty(headerValue)
+                    //    && Uri.TryCreate(headerValue, UriKind.Absolute, out Uri origin)
+                    //    && origin.Host == publicFacingHost;
+
+                    CommaderService = s;
                 }
             );
         }

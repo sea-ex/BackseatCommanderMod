@@ -8,6 +8,11 @@ namespace BackseatCommanderMod.Server
 {
     internal class CommanderService : WebSocketBehavior
     {
+        public void OnTimeRateIndexChanged(int index)
+        {
+            this.Sessions.Broadcast("Time rate: " + index.ToString());
+        }
+
         protected override void OnMessage(MessageEventArgs e)
         {
             string type = "unknown";

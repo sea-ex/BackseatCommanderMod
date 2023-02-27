@@ -91,8 +91,77 @@ namespace BackseatCommanderMod
             }
 
             Logger.LogInfo($"[OnGameStateChanged] Got {msg.CurrentState}, starting initialization");
-            game?.Messages.Unsubscribe<GameStateChangedMessage>(OnGameStateChanged);
+            game.Messages.Unsubscribe<GameStateChangedMessage>(OnGameStateChanged);
+
             StartServer();
+            game.Messages.Subscribe<GameStateChangedMessage>(GameLoadedOnGameStateChanged);
+        }
+
+        private void GameLoadedOnGameStateChanged(MessageCenterMessage message)
+        {
+            if (!(message is GameStateChangedMessage msg))
+            {
+                return;
+            }
+
+            switch (msg.CurrentState)
+            {
+                case GameState.FlightView:
+                case GameState.Map3DView:
+                case GameState.PhotoMode:
+                case GameState.Launchpad:
+                case GameState.Runway:
+                    RegisterViewStateBindings();
+                    break;
+
+                default:
+                    UnregisterViewStateBindings();
+                    break;
+
+                    //case GameState.Invalid:
+                    //case GameState.WarmUpLoading:
+                    //case GameState.MainMenu:
+                    //case GameState.KerbalSpaceCenter:
+                    //case GameState.VehicleAssemblyBuilder:
+                    //case GameState.BaseAssemblyEditor:
+                    //case GameState.ColonyView:
+                    //case GameState.PlanetViewer:
+                    //case GameState.TrainingCenter:
+                    //case GameState.TrackingStation:
+                    //case GameState.ResearchAndDevelopment:
+                    //case GameState.Flag:
+                    //    // unsub?
+                    //    break;
+            }
+        }
+
+        private void UnregisterViewStateBindings()
+        {
+            var provider = game?.ViewController?.DataProvider?.UniverseDataProvider;
+            if (provider == null)
+            {
+                return;
+            }
+
+            provider.TimeRateIndex.OnChanged -= OnChangedTimeRateIndex;
+        }
+
+        private void RegisterViewStateBindings()
+        {
+            var provider = game?.ViewController?.DataProvider?.UniverseDataProvider;
+            if (provider == null)
+            {
+                return;
+            }
+
+            provider.TimeRateIndex.OnChanged += OnChangedTimeRateIndex;
+        }
+
+        private void OnChangedTimeRateIndex()
+        {
+            server.CommaderService.OnTimeRateIndexChanged(
+                game?.ViewController?.DataProvider?.UniverseDataProvider?.TimeRateIndex?.GetValue() ?? 0
+            );
         }
 
         private void StartServer()
