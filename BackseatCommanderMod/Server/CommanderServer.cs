@@ -2,34 +2,46 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
-using WebSocketSharp.Net;
 using WebSocketSharp.Server;
 
 namespace BackseatCommanderMod.Server
 {
     internal class CommanderServer : IDisposable
     {
+        private readonly string publicFacingHost;
         private HttpServer? httpServer;
-        private WebSocketServer? server;
         private bool disposedValue;
 
         public CommanderServer(IPAddress host, int port)
         {
             httpServer = new HttpServer(host, port);
-            httpServer.Log.Level = WebSocketSharp.LogLevel.Trace;
-            httpServer.DocumentRootPath = "/";
-
+            publicFacingHost = $"{host}:{port}";
+            InitializeServer(httpServer);
         }
 
         public void Start()
         {
-            if (server == null)
+            if (httpServer == null)
             {
                 return;
             }
 
-            server.AddWebSocketService<CommanderService>("/commander");
-            server.Start();
+            httpServer.Start();
+
+            if (httpServer.IsListening)
+            {
+                Static.Logger?.LogInfo($"[CommanderServer] HTTP server listening at http://{publicFacingHost}/");
+                foreach (var path in httpServer.WebSocketServices.Paths)
+                {
+                    Static.Logger?.LogInfo($"[CommanderServer] - WebSocket service: {path}");
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -38,19 +50,41 @@ namespace BackseatCommanderMod.Server
             {
                 if (disposing)
                 {
-                    server?.Stop();
+                    if (httpServer != null)
+                    {
+                        httpServer.OnGet -= OnServerGet;
+                        httpServer.Stop();
+                    }
                 }
 
-                server = null;
+                httpServer = null;
                 disposedValue = true;
             }
         }
 
-
-        public void Dispose()
+        private void InitializeServer(HttpServer server)
         {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            server.Log.Level = WebSocketSharp.LogLevel.Trace;
+            server.OnGet += OnServerGet;
+            server.AddWebSocketService<CommanderService>("/commander");
+        }
+
+        private void OnServerGet(object sender, HttpRequestEventArgs e)
+        {
+            var req = e.Request;
+            var res = e.Response;
+
+            if (req.RawUrl != "/")
+            {
+                res.Redirect($"http://{publicFacingHost}/");
+                return;
+            }
+
+            byte[] indexContent = global::BackseatCommanderMod.Properties.Resources.WebIndex;
+            res.ContentType = "text/html; charset=utf-8";
+            res.ContentEncoding = Encoding.UTF8;
+            res.ContentLength64 = indexContent.Length;
+            res.Close(indexContent, false);
         }
     }
 }
