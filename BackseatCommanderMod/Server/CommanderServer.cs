@@ -9,13 +9,13 @@ namespace BackseatCommanderMod.Server
     internal class CommanderServer : IDisposable
     {
         private readonly string publicFacingHost;
-        private HttpServer? httpServer;
+        private HttpServer httpServer;
         private bool disposedValue;
 
-        public CommanderServer(IPAddress host, int port)
+        public CommanderServer(IPAddress host, int port, string publicFacingHost)
         {
             httpServer = new HttpServer(host, port);
-            publicFacingHost = $"{host}:{port}";
+            this.publicFacingHost = string.IsNullOrWhiteSpace(publicFacingHost) ? $"{host}:{port}" : publicFacingHost.Trim();
             InitializeServer(httpServer);
         }
 
@@ -66,7 +66,16 @@ namespace BackseatCommanderMod.Server
         {
             server.Log.Level = WebSocketSharp.LogLevel.Trace;
             server.OnGet += OnServerGet;
-            server.AddWebSocketService<CommanderService>("/commander");
+            server.AddWebSocketService<CommanderService>(
+                "/ws",
+                s =>
+                {
+                    s.OriginValidator = headerValue =>
+                        !string.IsNullOrEmpty(headerValue)
+                        && Uri.TryCreate(headerValue, UriKind.Absolute, out Uri origin)
+                        && origin.Host == publicFacingHost;
+                }
+            );
         }
 
         private void OnServerGet(object sender, HttpRequestEventArgs e)

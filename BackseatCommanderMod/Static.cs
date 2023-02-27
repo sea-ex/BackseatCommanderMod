@@ -7,6 +7,6 @@ namespace BackseatCommanderMod
 {
     internal static class Static
     {
-        public static ManualLogSource? Logger = null;
+        public static ManualLogSource Logger = null;
     }
 }
