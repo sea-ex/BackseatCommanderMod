@@ -20,3 +20,13 @@ Only works on Windows 8.1>= and probably only on Chrome on Android. iOS probably
 9. Open the URL of your computer's LAN address in your phone's browser (e.g. `https://192.168.1.123:6674/`)
 10. Click on "Permissions" on the website
 11. Enjoy controlling your ship
+
+## How it works
+
+The mod starts a WebSocket server inside KSP2. It serves a simple React app, bundled into a single HTML file, which your phone executes. The frontend uses the RelativeOrientationSensor Web API to get a quaternion of the phone's rotation, which it transmits over WebSocket to the mod. The mod then manipulates your vessel's SAS to change its target orientation. It doesn't work very well, and I suspect I have a wrong reference frame for the orientation or something. But end-to-end, it works.
+
+// todo
+
+## License
+
+MIT, see LICENSE
