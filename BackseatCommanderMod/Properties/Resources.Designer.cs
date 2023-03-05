@@ -63,56 +63,6 @@ namespace BackseatCommanderMod.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] example_crt {
-            get {
-                object obj = ResourceManager.GetObject("example.crt", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] example_key {
-            get {
-                object obj = ResourceManager.GetObject("example.key", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] example_key_pkcs8_der {
-            get {
-                object obj = ResourceManager.GetObject("example_key_pkcs8.der", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] example_pfx {
-            get {
-                object obj = ResourceManager.GetObject("example.pfx", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] example_private_blob {
-            get {
-                object obj = ResourceManager.GetObject("example_private.blob", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
         internal static byte[] WebIndex {
             get {
                 object obj = ResourceManager.GetObject("WebIndex", resourceCulture);

@@ -1,11 +1,5 @@
-﻿using OpenSSL.X509Certificate2Provider;
-using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
+﻿using System;
 using System.Net;
-using System.Net.Security;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using WebSocketSharp.Server;
 
@@ -24,12 +18,10 @@ namespace BackseatCommanderMod.Server
             IPAddress host,
             int port,
             string publicFacingHost
-        //IServerCertificateGenerator httpsCertGenerator
         )
         {
-            //this.certificateGenerator = httpsCertGenerator;
             this.httpServer = new HttpServer(host, port, true);
-            this.publicFacingHost = string.IsNullOrWhiteSpace(publicFacingHost) ? $"{host}:{port}" : publicFacingHost.Trim();
+            this.publicFacingHost = string.IsNullOrWhiteSpace(publicFacingHost) ? $"http://{host}:{port}" : publicFacingHost.Trim();
         }
 
         public void Start()
@@ -45,7 +37,7 @@ namespace BackseatCommanderMod.Server
 
             if (httpServer.IsListening)
             {
-                Static.Logger?.LogInfo($"[CommanderServer] HTTP server listening at http://{publicFacingHost}/");
+                Static.Logger?.LogInfo($"[CommanderServer] HTTP server listening at {publicFacingHost}");
                 foreach (var path in httpServer.WebSocketServices.Paths)
                 {
                     Static.Logger?.LogInfo($"[CommanderServer] - WebSocket service: {path}");
@@ -82,22 +74,6 @@ namespace BackseatCommanderMod.Server
         private void InitializeServer(HttpServer server)
         {
             server.Log.Level = WebSocketSharp.LogLevel.Trace;
-            //Static.Logger?.LogInfo($"[CommanderServer] Generating a certificate for HTTPS");
-
-            var cert = new X509Certificate2(Properties.Resources.example_crt);
-            var rsa = new RSACryptoServiceProvider();
-            rsa.ImportCspBlob(Properties.Resources.example_private_blob);
-            cert.PrivateKey = rsa;
-
-            //new CertificateFromFileProvider(Properties.Resources.example_crt, Properties.Resources.example_key).Certificate;
-            httpServer.SslConfiguration.ServerCertificate = cert;
-            httpServer.SslConfiguration.ClientCertificateValidationCallback += (object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) => true;
-            httpServer.SslConfiguration.ClientCertificateRequired = false;
-
-            ServicePointManager.ServerCertificateValidationCallback = delegate (object sender, X509Certificate incomingCert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-            {
-                return true;
-            };
 
             server.OnGet += OnServerGet;
             server.AddWebSocketService<CommanderService>(
