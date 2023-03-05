@@ -9,11 +9,11 @@
     <Title>Backseat Commander Mod</Title>
 
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
+    <SignAssembly>False</SignAssembly>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BouncyCastle.Cryptography" Version="2.1.1" />
-    <PackageReference Include="OpenSSL.X509Certificate2.Provider" Version="1.3.0" />
     <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
   </ItemGroup>
 
@@ -65,8 +65,23 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Proxy\dist\https-proxy-LICENSES.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Proxy\https-proxy-LICENSES.txt</TargetPath>
+    </None>
+    <None Update="Proxy\dist\https-proxy.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Proxy\https-proxy.js</TargetPath>
+    </None>
+    <None Update="start-proxy.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="if $(ConfigurationName) == Release (&#xD;&#xA;  cd Frontend&#xD;&#xA;  npm run build&#xD;&#xA;)" />
+    <Exec Command="if $(ConfigurationName) == Release (&#xD;&#xA;  cd Proxy&#xD;&#xA;  npm run build&#xD;&#xA;)" />
   </Target>
 
 </Project>

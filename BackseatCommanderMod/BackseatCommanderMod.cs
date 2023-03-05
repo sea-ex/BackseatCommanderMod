@@ -16,9 +16,11 @@ namespace BackseatCommanderMod
     {
         private ConfigEntry<string> configBindAddress;
         private ConfigEntry<int> configBindPort;
-        private ConfigEntry<string> configPlubicFacingHost;
+        private ConfigEntry<string> configPublicFacingUrl;
         private CommanderServer server;
         private GameInstance game = null;
+
+        private bool doUpdate = false;
 
         private void Awake()
         {
@@ -49,11 +51,11 @@ namespace BackseatCommanderMod
                 6674,
                 "The port to which the HTTP and WebSocket server binds to. Must be a number between 1025-65535, or 0 for a random available port."
             );
-            configPlubicFacingHost = Config.Bind(
+            configPublicFacingUrl = Config.Bind(
                 "General",
-                "PublicFacingHostName",
+                "PublicFacingUrl",
                 "",
-                "The public facing host name. Used by the server in redirect URLs and for checking the WebSocket request origin. Leave empty to default to the same as the bind host. If exposing the server to the public, or serving behind a reverse proxy, set to the host name (e.g. example.com or example.com:12345 or 192.168.100.1:12345, no protocol [http://] or paths [/]) via which the browser accesses the commander page."
+                "The public facing origin. Used by the server in redirect URLs and for checking the WebSocket request origin. Leave empty to default to the same as the bind host. If exposing the server to the public, or serving behind a reverse proxy, set to the host name with protocol (e.g. https://example.com or http://example.com:12345 or http://192.168.100.1:12345, no paths [/]) via which the browser accesses the commander page."
             );
         }
 
@@ -143,6 +145,7 @@ namespace BackseatCommanderMod
                 return;
             }
 
+            this.doUpdate = false;
             provider.TimeRateIndex.OnChanged -= OnChangedTimeRateIndex;
         }
 
@@ -154,6 +157,7 @@ namespace BackseatCommanderMod
                 return;
             }
 
+            this.doUpdate = true;
             provider.TimeRateIndex.OnChanged += OnChangedTimeRateIndex;
         }
 
@@ -170,9 +174,16 @@ namespace BackseatCommanderMod
             server = new CommanderServer(
                 host: IPAddress.Parse(configBindAddress.Value.Trim()),
                 port: configBindPort.Value,
-                publicFacingHost: configPublicFacingUrl.Value
+                publicFacingUrl: configPublicFacingUrl.Value
             );
             server.Start();
+
+            server.CommaderService.OnGyroscopeData += CommaderService_OnGyroscopeData;
+        }
+
+        private void CommaderService_OnGyroscopeData(object sender, GyroscopeDataEventArgs e)
+        {
+            
         }
     }
 }

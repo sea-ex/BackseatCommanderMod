@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 
@@ -13,23 +11,71 @@ namespace BackseatCommanderMod.Server
             this.Sessions.Broadcast("Time rate: " + index.ToString());
         }
 
+        public delegate void StartHandler(object sender, EventArgs e);
+        public event StartHandler OnStart;
+        public delegate void StopHandler(object sender, EventArgs e);
+        public event StopHandler OnStop;
+        public delegate void GyroscopeDataHandler(object sender, GyroscopeDataEventArgs e);
+        public event GyroscopeDataHandler OnGyroscopeData;
+
         protected override void OnMessage(MessageEventArgs e)
         {
-            string type = "unknown";
-            if (e.IsBinary)
+            if (!e.IsBinary || e.RawData == null || e.RawData.Length < 1)
             {
-                type = "binary";
-            }
-            else if (e.IsText)
-            {
-                type = "text";
-            }
-            else if (e.IsPing)
-            {
-                type = "ping";
+                return;
             }
 
-            Static.Logger?.LogInfo($"Received message. Type: {type}, Data: {e.Data}");
+            if (!Enum.IsDefined(typeof(MessageOpCodes), e.RawData[0]))
+            {
+                return;
+            }
+
+            var opcode = (MessageOpCodes)e.RawData[0];
+            if (opcode != MessageOpCodes.GyroscopeData)
+                Static.Logger?.LogDebug($"Received opcode ${opcode}");
+
+            switch (opcode)
+            {
+                case MessageOpCodes.Start:
+                    OnStart?.Invoke(this, EventArgs.Empty);
+                    break;
+                case MessageOpCodes.Stop:
+                    OnStop?.Invoke(this, EventArgs.Empty);
+                    break;
+                case MessageOpCodes.GyroscopeData:
+                    {
+                        // opcode is 1 byte
+                        int payloadOffset = 1;
+                        if (e.RawData.Length < (payloadOffset + 4 * sizeof(float))) break;
+
+                        var quaternion = new double[4];
+                        for (int i = 0; i < quaternion.Length; i++)
+                        {
+                            quaternion[i] = BitConverter.ToSingle(e.RawData, payloadOffset + i * sizeof(float));
+                        }
+
+                        OnGyroscopeData?.Invoke(this, new GyroscopeDataEventArgs
+                        {
+                            Angle = new QuaternionD(quaternion[0], quaternion[1], quaternion[2], quaternion[3]).eulerAngles
+                        });
+                        break;
+                    }
+                default:
+                    break;
+            };
         }
+    }
+
+    internal class GyroscopeDataEventArgs : EventArgs
+    {
+        public Vector3d Angle { get; set; }
+    }
+
+    internal enum MessageOpCodes : byte
+    {
+        RESERVED = 0,
+        Start = 1,
+        Stop = 2,
+        GyroscopeData = 3
     }
 }

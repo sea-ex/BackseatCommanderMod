@@ -8,7 +8,7 @@ namespace BackseatCommanderMod.Server
     internal class CommanderServer : IDisposable
     {
         //private readonly IServerCertificateGenerator certificateGenerator;
-        private readonly string publicFacingHost;
+        private readonly string publicUrl;
         private HttpServer httpServer;
         private bool disposedValue;
 
@@ -17,11 +17,11 @@ namespace BackseatCommanderMod.Server
         public CommanderServer(
             IPAddress host,
             int port,
-            string publicFacingHost
+            string publicFacingUrl
         )
         {
             this.httpServer = new HttpServer(host, port, true);
-            this.publicFacingHost = string.IsNullOrWhiteSpace(publicFacingHost) ? $"http://{host}:{port}" : publicFacingHost.Trim();
+            this.publicUrl = string.IsNullOrWhiteSpace(publicFacingUrl) ? $"http://{host}:{port}" : publicFacingUrl.Trim();
         }
 
         public void Start()
@@ -37,7 +37,7 @@ namespace BackseatCommanderMod.Server
 
             if (httpServer.IsListening)
             {
-                Static.Logger?.LogInfo($"[CommanderServer] HTTP server listening at {publicFacingHost}");
+                Static.Logger?.LogInfo($"[CommanderServer] HTTP server listening at {publicUrl}");
                 foreach (var path in httpServer.WebSocketServices.Paths)
                 {
                     Static.Logger?.LogInfo($"[CommanderServer] - WebSocket service: {path}");
@@ -97,7 +97,7 @@ namespace BackseatCommanderMod.Server
 
             if (req.RawUrl != "/")
             {
-                res.Redirect($"http://{publicFacingHost}/");
+                res.Redirect($"${publicUrl}/");
                 return;
             }
 
