@@ -118,6 +118,21 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="example.crt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>example.crt;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="example.key" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>example.key;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="example.pfx" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>example.pfx;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="example_key_pkcs8.der" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>example_key_pkcs8.der;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="example_private.blob" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>example_private.blob;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="WebIndex" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Frontend\dist\index.html;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

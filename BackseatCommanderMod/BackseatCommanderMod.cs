@@ -171,6 +171,7 @@ namespace BackseatCommanderMod
                 host: IPAddress.Parse(configBindAddress.Value.Trim()),
                 port: configBindPort.Value,
                 publicFacingHost: configPlubicFacingHost.Value
+                //new RSAServerCertificateGenerator("SHA256WITHRSA", 2048)
             );
             server.Start();
         }
