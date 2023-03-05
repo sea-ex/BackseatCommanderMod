@@ -11,10 +11,24 @@ namespace BackseatCommanderMod.Server
             this.Sessions.Broadcast("Time rate: " + index.ToString());
         }
 
+        protected override void OnOpen()
+        {
+            base.OnOpen();
+            BackseatCommanderMod.Instance.RegisterCommanderServiceSession(this);
+        }
+
+        protected override void OnClose(CloseEventArgs e)
+        {
+            base.OnClose(e);
+            BackseatCommanderMod.Instance.UnregisterCommanderServiceSession(this);
+        }
+
         public delegate void StartHandler(object sender, EventArgs e);
         public event StartHandler OnStart;
+
         public delegate void StopHandler(object sender, EventArgs e);
         public event StopHandler OnStop;
+
         public delegate void GyroscopeDataHandler(object sender, GyroscopeDataEventArgs e);
         public event GyroscopeDataHandler OnGyroscopeData;
 
@@ -31,8 +45,7 @@ namespace BackseatCommanderMod.Server
             }
 
             var opcode = (MessageOpCodes)e.RawData[0];
-            if (opcode != MessageOpCodes.GyroscopeData)
-                Static.Logger?.LogDebug($"Received opcode ${opcode}");
+            Static.Logger?.LogDebug($"Received opcode {opcode}");
 
             switch (opcode)
             {

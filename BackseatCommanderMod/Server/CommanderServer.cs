@@ -20,7 +20,7 @@ namespace BackseatCommanderMod.Server
             string publicFacingUrl
         )
         {
-            this.httpServer = new HttpServer(host, port, true);
+            this.httpServer = new HttpServer(host, port);
             this.publicUrl = string.IsNullOrWhiteSpace(publicFacingUrl) ? $"http://{host}:{port}" : publicFacingUrl.Trim();
         }
 
@@ -97,7 +97,7 @@ namespace BackseatCommanderMod.Server
 
             if (req.RawUrl != "/")
             {
-                res.Redirect($"${publicUrl}/");
+                res.Redirect($"{publicUrl}/");
                 return;
             }
 

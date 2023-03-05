@@ -7,6 +7,9 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using KSP.Game;
 using KSP.Messages;
+using KSP.Sim;
+using KSP.Sim.impl;
+using System.Collections.Concurrent;
 using UnityEngine;
 
 namespace BackseatCommanderMod
@@ -14,16 +17,25 @@ namespace BackseatCommanderMod
     [BepInPlugin("engineering.sea-x.BackseatCommander", "Backseat Commander", "0.1.0")]
     public class BackseatCommanderMod : BaseUnityPlugin
     {
+        // sorry awful hack
+        public static BackseatCommanderMod Instance;
+
         private ConfigEntry<string> configBindAddress;
         private ConfigEntry<int> configBindPort;
         private ConfigEntry<string> configPublicFacingUrl;
+
         private CommanderServer server;
+
         private GameInstance game = null;
 
-        private bool doUpdate = false;
+        ConcurrentQueue<Action> mainThreadQueue = new ConcurrentQueue<Action>();
+
+        private bool inFlightScene = false;
+        private bool userRequestedStart = false;
 
         private void Awake()
         {
+            Instance = this;
             Static.Logger = Logger;
             BindConfigs();
 
@@ -33,8 +45,22 @@ namespace BackseatCommanderMod
 
         private void OnDestroy()
         {
+            inFlightScene = false;
+            userRequestedStart = false;
+
             server?.Dispose();
             server = null;
+        }
+
+        private void Update()
+        {
+            if (!inFlightScene) return;
+
+            while (mainThreadQueue.TryDequeue(out Action action))
+            {
+                Logger.LogDebug("Running update");
+                action.Invoke();
+            }
         }
 
         private void BindConfigs()
@@ -42,7 +68,7 @@ namespace BackseatCommanderMod
             configBindAddress = Config.Bind(
                 "General",
                 "BindAddress",
-                "0.0.0.0",
+                "127.0.0.1",
                 "The TCP address/host to which the HTTP and WebSocket server binds to. The default 0.0.0.0 means that the server will be accessible from anywhere. Can be any IPv4 address, but it may be useful to limit it to your LAN address, e.g. 192.168.1.123, which will only listen to connections from your local network."
             );
             configBindPort = Config.Bind(
@@ -110,7 +136,6 @@ namespace BackseatCommanderMod
             {
                 case GameState.FlightView:
                 case GameState.Map3DView:
-                case GameState.PhotoMode:
                 case GameState.Launchpad:
                 case GameState.Runway:
                     RegisterViewStateBindings();
@@ -145,7 +170,7 @@ namespace BackseatCommanderMod
                 return;
             }
 
-            this.doUpdate = false;
+            this.inFlightScene = false;
             provider.TimeRateIndex.OnChanged -= OnChangedTimeRateIndex;
         }
 
@@ -157,7 +182,7 @@ namespace BackseatCommanderMod
                 return;
             }
 
-            this.doUpdate = true;
+            this.inFlightScene = true;
             provider.TimeRateIndex.OnChanged += OnChangedTimeRateIndex;
         }
 
@@ -166,6 +191,22 @@ namespace BackseatCommanderMod
             server.CommaderService.OnTimeRateIndexChanged(
                 game?.ViewController?.DataProvider?.UniverseDataProvider?.TimeRateIndex?.GetValue() ?? 0
             );
+        }
+
+        private VesselComponent activeVessel = null;
+
+        internal void RegisterCommanderServiceSession(CommanderService service)
+        {
+            service.OnStart += CommaderService_OnStart;
+            service.OnStop += CommaderService_OnStop;
+            service.OnGyroscopeData += CommaderService_OnGyroscopeData;
+        }
+
+        internal void UnregisterCommanderServiceSession(CommanderService service)
+        {
+            service.OnStart -= CommaderService_OnStart;
+            service.OnStop -= CommaderService_OnStop;
+            service.OnGyroscopeData -= CommaderService_OnGyroscopeData;
         }
 
         private void StartServer()
@@ -177,13 +218,48 @@ namespace BackseatCommanderMod
                 publicFacingUrl: configPublicFacingUrl.Value
             );
             server.Start();
+        }
 
-            server.CommaderService.OnGyroscopeData += CommaderService_OnGyroscopeData;
+        private void CommaderService_OnStop(object sender, EventArgs e)
+        {
+            userRequestedStart = false;
+            activeVessel = null;
+        }
+
+        private void CommaderService_OnStart(object sender, EventArgs e)
+        {
+            mainThreadQueue.Enqueue(() =>
+            {
+                activeVessel = game?.ViewController?.GetActiveSimVessel(true);
+                if (activeVessel == null)
+                {
+                    Logger.LogInfo("activeVessel was null");
+                    return;
+                }
+
+                var autopilot = activeVessel.Autopilot;
+                if (autopilot.Enabled)
+                {
+                    autopilot.Deactivate();
+                }
+                if (autopilot.AutopilotMode != AutopilotMode.Normal)
+                {
+                    autopilot.SetMode(AutopilotMode.Normal);
+                }
+
+                userRequestedStart = true;
+            });
         }
 
         private void CommaderService_OnGyroscopeData(object sender, GyroscopeDataEventArgs e)
         {
-            
+            if (activeVessel == null) return;
+
+            mainThreadQueue.Enqueue(() =>
+            {
+                var sas = activeVessel.Autopilot.SAS;
+                sas.SetTargetOrientation(new Vector(sas.ReferenceFrame, e.Angle), false);
+            });
         }
     }
 }

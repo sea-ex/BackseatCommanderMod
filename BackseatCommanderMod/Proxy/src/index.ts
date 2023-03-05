@@ -1,6 +1,7 @@
 import { parseArgs } from "node:util";
 import httpProxy from "http-proxy";
 import generateCertificate from "./generateCertificate";
+import { ServerResponse } from "node:http";
 
 async function start({
   bindAddress = "0.0.0.0",
@@ -22,10 +23,19 @@ async function start({
       localAddress: bindAddress,
       ws: true,
       ssl: { key, cert },
+      // change the Origin header to match what the WebsocketSharp expects
+      changeOrigin: true,
     })
-    .once("error", (err) => {
+    .on("error", (err, req, res) => {
       console.error(err);
-      process.exit(1);
+
+      if (res instanceof ServerResponse) {
+        res.writeHead(500, {
+          "Content-Type": "text/plain",
+        });
+        res.end();
+        return;
+      }
     })
     .listen(port);
 
